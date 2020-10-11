@@ -17,11 +17,11 @@ router.get('/users/:_id', (req, res) => {
     })
     .then((user) => {
       if (!user) {
-        return res.status(404)
-          .send({ message: 'Такого пользователя не существует' });
+        return res.status(404).send({ message: 'Такого пользователя не существует' });
       }
-      res.send(user);
-    }).then((data) => res.status(500).send(data));
+      return res.send(user);
+    })
+    .catch((err) => res.status(500).send(err));
 });
 
 module.exports = router;
