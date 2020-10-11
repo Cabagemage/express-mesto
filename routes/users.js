@@ -21,7 +21,7 @@ router.get('/users/:_id', (req, res) => {
           .send({ message: 'Такого пользователя не существует' });
       }
       res.send(user);
-    });
+    }).then((data) => res.status(500).send(data));
 });
 
 module.exports = router;
