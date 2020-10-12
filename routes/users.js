@@ -5,7 +5,9 @@ const getJson = require('../utils/getJson.js');
 const customPath = path.join(__dirname, '..', 'data', 'users.json');
 
 router.get('/users', (req, res) => {
-  getJson(customPath).then((data) => res.send(data));
+  getJson(customPath)
+    .then((data) => res.send(data))
+    .catch(() => res.status(500).send({ message: 'Ошибка чтения файла' }));
 });
 
 router.get('/users/:_id', (req, res) => {
@@ -21,7 +23,7 @@ router.get('/users/:_id', (req, res) => {
       }
       return res.send(user);
     })
-    .catch((err) => res.status(500).send(err));
+    .catch(() => res.status(500).send({ message: 'Ошибка чтения файла' }));
 });
 
 module.exports = router;
