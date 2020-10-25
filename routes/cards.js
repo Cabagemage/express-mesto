@@ -1,12 +1,13 @@
 const router = require('express').Router();
-const path = require('path');
-const getJson = require('../utils/getJson.js');
 
-const customPath = path.join(__dirname, '..', 'data', 'cards.json');
+const {
+  getCards, createCard, deleteCard, likeCard, dislikeCard,
+} = require('../controllers/cards');
 
-router.get('/cards', (req, res) => {
-  getJson(customPath).then((data) => res.send(data))
-    .catch(() => res.status(500).send({ message: 'Ошибка чтения файла' }));
-});
+router.get('/cards', getCards);
+router.get('/cards/:id', deleteCard);
+router.get('/cards/:id/likes', likeCard);
+router.get('/cards/:id/likes', dislikeCard);
+router.post('/cards', createCard);
 
 module.exports = router;
