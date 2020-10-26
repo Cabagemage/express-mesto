@@ -3,7 +3,6 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 
 const app = express();
-const path = require('path');
 const router = require('./routes/index.js');
 
 const PORT = 3000;
@@ -27,5 +26,4 @@ app.use((req, res, next) => {
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.listen(PORT, () => console.log('SERVER IS RUNNING'));
-app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', router);
