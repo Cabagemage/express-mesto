@@ -1,28 +1,38 @@
 const User = require('../models/user');
-const { ERROR_404, ERROR_400, ERROR_500 } = require('../utils/errors');
+
+const error404 = new Error('Пользователь не найден');
+error404.statusCode = 404;
+
+const error400 = new Error('Переданы некорректные данные');
+error400.statusCode = 400;
 
 module.exports.getUsers = (req, res) => {
   User.find({})
+    .orFail(() => {
+      throw error404;
+    })
     .then((users) => {
       if (users) {
         res.send({ data: users });
       }
     })
-    .catch((err) => res.status(err ? ERROR_400 : ERROR_500).send({ message: 'Список пользователей не найден' || 'Произошла ошибка' }));
+    .catch(() => res.status(error404.statusCode).send({ message: 'Список пользователей не может быть получен' }));
 };
 
 module.exports.createUser = (req, res) => {
   const { name, about, avatar } = req.body;
   User.create({ name, about, avatar })
     .then((user) => res.status(200).send({ data: user }))
-    .catch((err) => res.status(err ? ERROR_404 : ERROR_500).send({ message: 'Не может быть создан, так как гибискус' || 'Произошла ошибка' }));
+    .catch(() => res.status(error400.statusCode).send({ message: 'Пользователь не может быть создан' }));
 };
 
 module.exports.findUser = (req, res) => {
   User.findById(req.params._userId)
-    .then((user) => {
+    .orFail(() => {
+      throw error404;
+    }).then((user) => {
       res.status(200).send({ data: user });
-    }).catch((err) => res.status(err ? ERROR_404 : ERROR_500).send({ message: 'Пользователь не найден' || 'Произошла ошибка' }));
+    }).catch(() => res.status(error404.statusCode).send({ message: 'Пользователь не найден' }));
 };
 
 module.exports.changeUserInfo = (req, res) => {
@@ -30,18 +40,24 @@ module.exports.changeUserInfo = (req, res) => {
   User.findByIdAndUpdate(req.params._userId, { name, about }, {
     new: true, // обработчик then получит на вход обновлённую запись
     runValidators: true, // данные будут валидированы перед изменением
-  }).then((user) => {
-    res.status(200).send({ data: user });
-  }).catch((err) => res.status(err ? ERROR_404 : ERROR_500).send({ message: 'Пользователь не найден' || 'Произошла ошибка' }));
+  }).orFail(() => {
+    throw error400;
+  })
+    .then((user) => {
+      res.status(200).send({ data: user });
+    }).catch(() => res.status(error400.statusCode).send({ message: 'При обновлении данных пользователя возникла ошибка. Проверьте правильность набора.' }));
 };
 
 module.exports.changeUserAvatar = (req, res) => {
   const { avatar } = req.body;
   User.findByIdAndUpdate(req.user._id, { avatar }, {
-    new: true, // обработчик then получит на вход обновлённую запись
-    // runValidators: true, // данные будут валидированы перед изменением
-  }).then((user) => {
-    res.status(200).send({ data: user.avatar });
+    new: true,
+    runValidators: true,
+  }).orFail(() => {
+    throw error400;
   })
-    .catch((err) => res.status(err ? ERROR_404 : ERROR_500).send({ message: 'Пользователь не найден' || 'Произошла ошибка' }));
+    .then((user) => {
+      res.status(200).send({ data: user.avatar });
+    })
+    .catch(() => res.status(error400.statusCode).send({ message: 'При обновлении аватара произошла ошибка. Убедитесь что передали корректную ссылку' }));
 };

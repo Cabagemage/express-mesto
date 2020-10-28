@@ -1,18 +1,26 @@
 const cardSchema = require('../models/card');
-const { ERROR_404, ERROR_500 } = require('../utils/errors');
+
+const error404 = new Error('Карточка не найдена');
+error404.statusCode = 404;
+
+const error400 = new Error('Переданы некорректные данные');
+error400.statusCode = 400;
 
 module.exports.getCards = (req, res) => {
   cardSchema.find({})
+    .orFail(() => {
+      throw error404;
+    })
     .then((cards) => {
       res.send({ data: cards });
-    });
+    }).catch(() => res.status(error404.statusCode).send({ message: 'Карточка не найдена' }));
 };
 
 module.exports.createCard = (req, res) => {
   const { name, link } = req.body;
-  cardSchema.create({ name, link, owner: req.params._userId })
+  cardSchema.create({ name, link, owner: req.user._id })
     .then((card) => res.status(200).send({ data: card }))
-    .catch((err) => res.status(err ? ERROR_404 : ERROR_500).send({ message: 'Карточка не найдена' || 'Произошла ошибка' }));
+    .catch(() => res.status(error400.statusCode).send({ message: 'Карточка не может быть создана' }));
 };
 
 module.exports.deleteCard = (req, res) => {
@@ -20,7 +28,7 @@ module.exports.deleteCard = (req, res) => {
     .then((card) => {
       res.status(200).send({ data: card });
     })
-    .catch((err) => res.status(err ? ERROR_404 : ERROR_500).send({ message: 'Карточка уже удалена' || 'Произошла ошибка' }));
+    .catch(() => res.status(error404.statusCode).send({ message: 'Карточка не найдена' }));
 };
 
 module.exports.likeCard = (req) => cardSchema.findByIdAndUpdate(req.params.cardId,
