@@ -25,18 +25,30 @@ module.exports.createCard = (req, res) => {
 
 module.exports.deleteCard = (req, res) => {
   cardSchema.findByIdAndDelete(req.params._cardId)
+    .orFail(() => {
+      throw error404;
+    })
     .then((card) => {
       res.status(200).send({ data: card });
     })
     .catch(() => res.status(error404.statusCode).send({ message: 'Карточка не найдена' }));
 };
 
-module.exports.likeCard = (req) => cardSchema.findByIdAndUpdate(req.params.cardId,
-  { $addToSet: { likes: req.params._cardId } },
-  { new: true });
+module.exports.likeCard = (req, res) => cardSchema.findByIdAndUpdate(req.params._cardId,
+  { $addToSet: { likes: req.user._id } }, { new: true })
+  .orFail(() => {
+    throw error404;
+  })
+  .then((likes) => { res.status(200).send({ data: likes }); })
+  .catch(() => res.status(error404.statusCode).send({ message: 'Карточка не найдена' }));
 
-module.exports.dislikeCard = (req) => cardSchema.findByIdAndUpdate(
-  req.params.cardId,
-  { $pull: { likes: req.params._cardId } },
+module.exports.dislikeCard = (req, res) => cardSchema.findByIdAndUpdate(
+  req.params._cardId,
+  { $pull: { likes: req.user._id } },
   { new: true }
-);
+)
+  .orFail(() => {
+    throw error404;
+  })
+  .then((likes) => { res.status(200).send({ data: likes }); })
+  .catch(() => res.status(error404.statusCode).send({ message: 'Карточка не найдена' }));
