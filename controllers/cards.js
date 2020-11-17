@@ -1,54 +1,56 @@
+// Перед пулл-реквестом нужно проверить работу методов по лайку и дизлайку
+
 const cardSchema = require('../models/card');
+const NotFound = require('../utils/Errors/NotFound');
+const BadRequest = require('../utils/Errors/BadRequest');
 
-const error404 = new Error('Карточка не найдена');
-error404.statusCode = 404;
-
-const error400 = new Error('Переданы некорректные данные');
-error400.statusCode = 400;
-
-module.exports.getCards = (req, res) => {
+module.exports.getCards = (req, res, next) => {
   cardSchema.find({})
     .orFail(() => {
-      throw error404;
+      throw new NotFound('Карточка не найдена');
     })
     .then((cards) => {
       res.send({ data: cards });
-    }).catch(() => res.status(error404.statusCode).send({ message: 'Карточка не найдена' }));
+    }).catch(next);
 };
 
-module.exports.createCard = (req, res) => {
+module.exports.createCard = (req, res, next) => {
   const { name, link } = req.body;
   cardSchema.create({ name, link, owner: req.user._id })
     .then((card) => res.status(200).send({ data: card }))
-    .catch(() => res.status(error400.statusCode).send({ message: 'Карточка не может быть создана' }));
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        const validationError = new BadRequest('Карточка не может быть создана');
+        next(validationError);
+      }
+    });
 };
 
-module.exports.deleteCard = (req, res) => {
+module.exports.deleteCard = (req, res, next) => {
   cardSchema.findByIdAndDelete(req.params._cardId)
     .orFail(() => {
-      throw error404;
+      throw new NotFound('Карточка уже удалена');
     })
     .then((card) => {
       res.status(200).send({ data: card });
-    })
-    .catch(() => res.status(error404.statusCode).send({ message: 'Карточка не найдена' }));
+    }).catch(next);
 };
 
-module.exports.likeCard = (req, res) => cardSchema.findByIdAndUpdate(req.params._cardId,
+module.exports.likeCard = (req, res, next) => cardSchema.findByIdAndUpdate(req.params._cardId,
   { $addToSet: { likes: req.user._id } }, { new: true })
   .orFail(() => {
-    throw error404;
+    throw new NotFound('Карточка не найдена');
   })
   .then((likes) => { res.status(200).send({ data: likes }); })
-  .catch(() => res.status(error404.statusCode).send({ message: 'Карточка не найдена' }));
+  .catch(next);
 
-module.exports.dislikeCard = (req, res) => cardSchema.findByIdAndUpdate(
+module.exports.dislikeCard = (req, res, next) => cardSchema.findByIdAndUpdate(
   req.params._cardId,
   { $pull: { likes: req.user._id } },
   { new: true }
 )
   .orFail(() => {
-    throw error404;
+    throw new NotFound('Карточка не найдена');
   })
   .then((likes) => { res.status(200).send({ data: likes }); })
-  .catch(() => res.status(error404.statusCode).send({ message: 'Карточка не найдена' }));
+  .catch(next);
