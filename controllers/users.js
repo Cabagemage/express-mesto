@@ -1,7 +1,17 @@
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const User = require('../models/user');
-
 const NotFound = require('../utils/Errors/NotFound');
 const BadRequest = require('../utils/Errors/BadRequest');
+
+module.exports.login = (req, res) => {
+  const { email, password } = req.body;
+  return User.findUserByCredentials(email, password)
+    .then((user) => {
+      const token = jwt.sign({ _id: user._id }, 'some-secret-key', { expiresIn: '7d' });
+      res.send({ token }).catch((err) => console.log(err));
+    });
+};
 
 module.exports.getUsers = (req, res, next) => {
   User.find({})
@@ -17,15 +27,19 @@ module.exports.getUsers = (req, res, next) => {
 };
 
 module.exports.createUser = (req, res, next) => {
-  const { name, about, avatar } = req.body;
-  User.create({ name, about, avatar })
-    .then((user) => res.status(200).send({ data: user }))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        const validationError = new BadRequest('Пользователь не может быть создан');
-        next(validationError);
-      }
+  bcrypt.hash(req.body.password, 10).then((hash) => {
+    User.create({
+      email: req.body.email,
+      password: hash
+    }).then((user) => {
+      res.send(user);
     });
+  }).catch((err) => {
+    if (err.name === 'ValidationError') {
+      const validationError = new BadRequest('Пользователь не может быть создан');
+      next(validationError);
+    }
+  });
 };
 
 module.exports.findUser = (req, res, next) => {
