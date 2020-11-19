@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 const express = require('express');
 const InternalError = require('./utils/Errors/InternalError');
 const { login, createUser } = require('./controllers/users');
+const { userValidation } = require('./middlewares/validation');
 const auth = require('./middlewares/auth');
 
 const app = express();
@@ -15,18 +16,11 @@ const mongoDBOptions = {
   useFindAndModify: false,
 };
 
-app.use((req, res, next) => {
-  req.user = {
-    _id: '5f917b8e5d5d60127c164891', // вставьте сюда _id созданного в предыдущем пункте пользователя
-  };
-  next();
-});
-
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.post('/signin', login);
-app.post('/signup', createUser);
+app.post('/signin', login, userValidation);
+app.post('/signup', createUser, userValidation);
 app.use(auth);
 app.use('/cards', require('./routes/index'));
 app.use('/users', require('./routes/index'));

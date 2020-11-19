@@ -4,15 +4,6 @@ const User = require('../models/user');
 const NotFound = require('../utils/Errors/NotFound');
 const BadRequest = require('../utils/Errors/BadRequest');
 
-module.exports.login = (req, res) => {
-  const { email, password } = req.body;
-  return User.findUserByCredentials(email, password)
-    .then((user) => {
-      const token = jwt.sign({ _id: user._id }, 'some-secret-key', { expiresIn: '7d' });
-      res.send({ token }).catch((err) => console.log(err));
-    });
-};
-
 module.exports.getUsers = (req, res, next) => {
   User.find({})
     .orFail(() => {
@@ -26,19 +17,14 @@ module.exports.getUsers = (req, res, next) => {
     .catch(next);
 };
 
-module.exports.createUser = (req, res, next) => {
-  bcrypt.hash(req.body.password, 10).then((hash) => {
-    User.create({
-      email: req.body.email,
-      password: hash
-    }).then((user) => {
-      res.send(user);
-    });
-  }).catch((err) => {
-    if (err.name === 'ValidationError') {
-      const validationError = new BadRequest('Пользователь не может быть создан');
-      next(validationError);
-    }
+module.exports.createUser = (req, res) => {
+  bcrypt.hash(req.body.password, 10).then((hash) => User.create({
+    email: req.body.email,
+    password: hash
+  }).then((user) => {
+    res.send(user);
+  })).catch(() => {
+    throw new BadRequest('Что-то не так с запросом');
   });
 };
 
@@ -74,6 +60,17 @@ module.exports.changeUserAvatar = (req, res, next) => {
   })
     .then((user) => {
       res.status(200).send({ data: user.avatar });
+    })
+    .catch(next);
+};
+module.exports.login = (req, res, next) => {
+  const { email, password } = req.body;
+  User.findUserByCredentials(email, password)
+    .then((user) => {
+      const token = jwt.sign({ _id: user._id }, 'some-secret-key', { expiresIn: '7d' });
+      res.send({ token });
+    }).catch(() => {
+      throw new BadRequest('Что-то не так с авторизацией');
     })
     .catch(next);
 };

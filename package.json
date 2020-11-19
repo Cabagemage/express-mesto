@@ -25,6 +25,7 @@
     "celebrate": "^13.0.4",
     "express": "^4.17.1",
     "express-winston": "^4.0.5",
+    "joi": "^17.3.0",
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^5.10.9",
     "validator": "^13.1.17",

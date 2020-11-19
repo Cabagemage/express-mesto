@@ -27,11 +27,13 @@ module.exports.createCard = (req, res, next) => {
 };
 
 module.exports.deleteCard = (req, res, next) => {
-  cardSchema.findByIdAndDelete(req.params._cardId)
+  cardSchema.findByIdAndDelete(req.params._cardId);
+  const owner = req.user._id
     .orFail(() => {
       throw new NotFound('Карточка уже удалена');
     })
     .then((card) => {
+      if (!owner) { res.status(400).send({ message: 'sorry' }); }
       res.status(200).send({ data: card });
     }).catch(next);
 };
