@@ -16,13 +16,26 @@ module.exports.getUsers = (req, res, next) => {
     })
     .catch(next);
 };
+module.exports.getOwnerInfo = (req, res, next) => {
+  const { _id } = req.user;
+  User.findById({
+    _id
+  })
+    .then((user) => res.status(200).send({ data: user }))
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        const validationError = new BadRequest('Пользователь не найден');
+        next(validationError);
+      }
+    });
+};
 
 module.exports.createUser = (req, res) => {
   bcrypt.hash(req.body.password, 10).then((hash) => User.create({
     email: req.body.email,
     password: hash
   }).then((user) => {
-    res.send(user);
+    res.send({ id: user._id, email: user.email });
   })).catch(() => {
     throw new BadRequest('Что-то не так с запросом');
   });

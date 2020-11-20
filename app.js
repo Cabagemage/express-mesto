@@ -19,13 +19,20 @@ const mongoDBOptions = {
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+app.get('/crash-test', () => {
+  setTimeout(() => {
+    throw new Error('Сервер сейчас упадёт');
+  }, 0);
+});
+
 app.post('/signin', login, userValidation);
 app.post('/signup', createUser, userValidation);
 app.use(auth);
-app.use('/cards', require('./routes/index'));
-app.use('/users', require('./routes/index'));
+app.use('/cards', require('./routes/cards'));
+app.use('/users', require('./routes/users'));
 
 mongoose.connect(mongoDBUrl, mongoDBOptions);
+
 app.use((err, req, res, next) => {
   const internalError = new InternalError('Хьюстон, у нас проблемы');
   const statusCode = err.statusCode || internalError;
