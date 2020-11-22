@@ -6,9 +6,9 @@ const { login, createUser } = require('./controllers/users');
 const { userValidation } = require('./middlewares/validation');
 const auth = require('./middlewares/auth');
 
+const { PORT = 3000 } = process.env;
 const app = express();
 
-const PORT = 3000;
 const mongoDBUrl = 'mongodb://localhost:27017/mestodb';
 const mongoDBOptions = {
   useNewUrlParser: true,
@@ -28,8 +28,8 @@ app.get('/crash-test', () => {
 app.post('/signin', login, userValidation);
 app.post('/signup', createUser, userValidation);
 app.use(auth);
-app.use('/cards', require('./routes/cards'));
-app.use('/users', require('./routes/users'));
+app.use('/', require('./routes/cards'));
+app.use('/', require('./routes/users'));
 
 mongoose.connect(mongoDBUrl, mongoDBOptions);
 
