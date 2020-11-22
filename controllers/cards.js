@@ -2,7 +2,7 @@
 
 const cardSchema = require('../models/card');
 const NotFound = require('../utils/Errors/NotFound');
-const BadRequest = require('../utils/Errors/BadRequest');
+// const BadRequest = require('../utils/Errors/BadRequest');
 
 module.exports.getCards = (req, res, next) => {
   cardSchema.find({})
@@ -16,30 +16,29 @@ module.exports.getCards = (req, res, next) => {
 
 module.exports.createCard = (req, res, next) => {
   const { name, link } = req.body;
-  cardSchema.create({ name, link, owner: req.user._id })
+  const owner = req.user.id;
+  cardSchema.create({ name, link, owner })
     .then((card) => res.status(200).send({ data: card }))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        const validationError = new BadRequest('Карточка не может быть создана');
-        next(validationError);
-      }
-    });
+    .catch(next);
 };
 
 module.exports.deleteCard = (req, res, next) => {
-  const userId = req.user._id;
+  const userId = req.user.id;
   const { _cardId } = req.params;
   cardSchema.findById(_cardId)
-    .populate('owner')
     .orFail(() => {
       throw new NotFound('Карточка уже удалена');
     })
+    .populate('owner')
     .then((card) => {
-      if (card.owner._id !== userId) { res.status(400).send({ message: 'error' }); }
-      res.status(200).send({ data: card });
+      if (card.owner.id === userId) {
+        cardSchema.findByIdAndDelete(_cardId)
+          .then((thisCard) => {
+            res.status(200).send({ data: thisCard });
+          });
+      }
     })
-
-    .catch((err) => console.log(err));
+    .catch(next);
 };
 
 module.exports.likeCard = (req, res, next) => cardSchema.findByIdAndUpdate(req.params._cardId,
