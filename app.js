@@ -1,3 +1,4 @@
+require('dotenv').config();
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const express = require('express');
@@ -6,7 +7,7 @@ const { login, createUser } = require('./controllers/users');
 const { userValidation } = require('./middlewares/validation');
 const auth = require('./middlewares/auth');
 
-const { PORT = 3000 } = process.env;
+const { PORT } = process.env;
 const app = express();
 
 const mongoDBUrl = 'mongodb://localhost:27017/mestodb';

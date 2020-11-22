@@ -27,13 +27,19 @@ module.exports.createCard = (req, res, next) => {
 };
 
 module.exports.deleteCard = (req, res, next) => {
-  cardSchema.findOneAndDelete(req.params._cardId, req.user._id)
+  const userId = req.user._id;
+  const { _cardId } = req.params;
+  cardSchema.findById(_cardId)
+    .populate('owner')
     .orFail(() => {
       throw new NotFound('Карточка уже удалена');
     })
     .then((card) => {
+      if (card.owner._id !== userId) { res.status(400).send({ message: 'error' }); }
       res.status(200).send({ data: card });
-    }).catch(next);
+    })
+
+    .catch((err) => console.log(err));
 };
 
 module.exports.likeCard = (req, res, next) => cardSchema.findByIdAndUpdate(req.params._cardId,
