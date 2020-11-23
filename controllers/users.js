@@ -20,16 +20,14 @@ module.exports.getUsers = (req, res, next) => {
     .catch(next);
 };
 module.exports.getOwnerInfo = (req, res, next) => {
-  const { _id } = req.user;
-  User.findById({
-    _id
+  User.findById(
+    req.user.id
+  ).orFail(() => {
+    throw new NotFound('Не найден');
   })
-    .then((user) => res.status(200).send({ data: user }))
+    .then((user) => res.send(user))
     .catch((err) => {
-      if (err.name === 'ValidationError') {
-        const validationError = new BadRequest('Пользователь не найден');
-        next(validationError);
-      }
+      console.log(err);
     });
 };
 

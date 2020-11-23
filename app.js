@@ -2,10 +2,11 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const express = require('express');
-const InternalError = require('./utils/Errors/InternalError');
+const cors = require('cors');
 const { login, createUser } = require('./controllers/users');
 const { userValidation } = require('./middlewares/validation');
 const auth = require('./middlewares/auth');
+const index = require('./routes/index');
 
 const { PORT } = process.env;
 const app = express();
@@ -26,19 +27,18 @@ app.get('/crash-test', () => {
   }, 0);
 });
 
+app.use(cors());
 app.post('/signin', login, userValidation);
 app.post('/signup', createUser, userValidation);
 app.use(auth);
-app.use('/', require('./routes/cards'));
-app.use('/', require('./routes/users'));
+app.use(index);
 
 mongoose.connect(mongoDBUrl, mongoDBOptions);
 
 app.use((err, req, res, next) => {
-  const internalError = new InternalError('Хьюстон, у нас проблемы');
-  const statusCode = err.statusCode || internalError;
+  const status = err.status || 500; res.status(status);
   const error = err.message;
-  res.status(statusCode).send(error);
+  res.status(status).send(error);
   next();
 });
 app.listen(PORT, () => console.log('SERVER IS RUNNING'));
